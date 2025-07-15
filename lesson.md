@@ -44,6 +44,12 @@ DESCRIBE address;
 You should see the column names and data types.
 
 > Describe the other 3 tables. Study their column names and data types.
+```sql
+DESCRIBE address;
+DESCRIBE car;
+DESCRIBE claim;
+DESCRIBE client;
+```
 
 ### Summarize tables
 
@@ -54,6 +60,11 @@ SUMMARIZE address;
 ```
 
 > Summarize the other 3 tables. Study their min, max, approx_unique, avg and std (if applicable).
+```sql
+SUMMARIZE car;
+SUMMARIZE claim;
+SUMMARIZE client;
+```
 
 ## Part 2 - Joins and Unions
 
@@ -138,8 +149,18 @@ INNER JOIN car ON claim.car_id = car.id;
 You can also use the `JOIN` keyword instead of `INNER JOIN`. They are the same. But it's good practice to use `INNER JOIN` to make your query more readable.
 
 > Inner join claim and client.
+```sql
+SELECT * 
+FROM claim
+INNER JOIN client on claim.client_id = client.id; 
+```
 >
 > Inner join client and address.
+```sql
+SELECT *
+FROM client
+INNER JOIN address ON client.address_id = address;
+``
 
 ### Left join
 
@@ -286,6 +307,12 @@ FROM claim;
 ```
 
 > Return a table containing `id, car_id, travel_time, running_total` from claim, where `running_total` is the running sum of the `travel_time` column for each `car_id`.
+```sql
+SELECT id, car_id, travel_time, 
+SUM(travel_time) OVER (PARTITION BY car_id ORDER BY id) AS running_total
+FROM claim
+ORDER BY car_id;
+```
 
 ### Rank
 
@@ -337,6 +364,12 @@ QUALIFY rank = 1;
 The `QUALIFY` clause filters the rows in the window. It keeps the rows where the rank is equal to 1.
 
 > Return a table containing `id, car_id, travel_time, rank` from claim, where `rank` is the rank of the `travel_time` in descending order for each `car_id`, and only return the rows with a rank of 1.
+```sql
+SELECT id, car_id, travel_time,
+  RANK() OVER (PARTITION BY car_id ORDER BY travel_time DESC) AS rank
+FROM claim
+QUALIFY rank =1;
+```
 
 ## Part 4 - Subqueries
 
@@ -425,3 +458,15 @@ WHERE resale_value < average_resale_value;
 ```
 
 > Return a table using CTE containing `id, resale_value, car_use` from car, where the car resale value is less than the average resale value for the car use.
+
+```sql
+WITH avg_resale_value_by_car_use AS (
+  SELECT car_use, AVG(resale_value) AS average_resale_value
+  FROM car
+  GROUP BY car_use
+)
+SELECT id, resale_value, c1.car_use
+FROM car c1
+INNER JOIN avg_resale_value_by_car_use c2 ON c1.car_use = c2.car_use
+WHERE resale_value < average_resale_value;
+```
